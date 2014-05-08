@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no">
+    <title>US City Heat Index</title>
+
+    <link rel="stylesheet" href="http://js.arcgis.com/3.9/js/dojo/dijit/themes/claro/claro.css">
+    <link rel="stylesheet" href="http://js.arcgis.com/3.9/js/esri/css/esri.css">
+    <link rel="stylesheet" href="css/layout.css">
+
+
+    <script src="http://js.arcgis.com/3.9/"></script>
+ 	<script src="js/AnimatePolyline.js"></script>
+ 
+     <script>
+    var glCityConnectors; 	// Graphics layer for the lines connecting a chosen city to its closest analogs
+    var flCities;			// Graphics layer for the city features
+    var map;
+	require([
+        "dojo/parser",
+        "dojo/ready",
+        "dijit/layout/BorderContainer",
+        "dijit/layout/ContentPane",
+        "dojo/dom",
+        "esri/map", 
+        "esri/urlUtils",
+        "esri/arcgis/utils",
+        "esri/geometry/Extent",
+        "esri/layers/ArcGISDynamicMapServiceLayer",
+        "esri/layers/ArcGISTiledMapServiceLayer",
+        "esri/layers/FeatureLayer",
+        "esri/layers/GraphicsLayer",
+        "esri/geometry/Polyline",
+        "esri/symbols/SimpleLineSymbol",
+        "esri/renderers/SimpleRenderer",
+        "esri/Color",
+        "esri/graphic",
+        "esri/InfoTemplate",
+        "esri/dijit/Legend",
+        "esri/dijit/Scalebar",
+        "dojo/domReady!"
+	], function(
+        parser,
+        ready,
+        BorderContainer,
+        ContentPane,
+        dom,
+        Map,
+        urlUtils,
+        arcgisUtils,
+        Extent,
+        ArcGISDynamicMapServiceLayer,
+        ArcGISTiledMapServiceLayer,
+        FeatureLayer,
+        GraphicsLayer,
+        Polyline,
+        SimpleLineSymbol,
+        SimpleRenderer,
+        Color,
+        Graphic,
+        InfoTemplate,
+        Legend,
+        Scalebar
+		) {
+        ready(function(){
+
+	        parser.parse();
+	
+			map = new Map("map", {
+				extent: new Extent({
+					xmin:-13782695.087618, ymin:1811961.3496825, xmax:-7624505.68790585, ymax:7632806.32470579,
+					spatialReference:{wkid:102100}
+				})
+			});
+			var tlBasemap = new ArcGISTiledMapServiceLayer(
+				"http://tiles.arcgis.com/tiles/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Dark_Gray_Base_Beta/MapServer");
+			map.addLayer(tlBasemap);
+
+			// Set up and add the connecting-lines graphics layer
+			glCityConnectors = new GraphicsLayer();
+			var slsConnector = new SimpleLineSymbol(
+				SimpleLineSymbol.STYLE_SOLID,
+				new Color([64, 128, 64]),
+				2);
+			var rendConnectors = new SimpleRenderer(slsConnector);
+			glCityConnectors.setRenderer(rendConnectors);
+			
+			map.addLayer(glCityConnectors);
+			
+			// Define the popup for the cities			
+			var itPopup = new InfoTemplate("${NAME}, ${ST}", "Index: <b>${HtestDay}</b> (for 2010)");
+			
+			flCities = new FeatureLayer(
+				"http://services.arcgis.com/6DIQcwlPy8knb6sg/arcgis/rest/services/HeatIndex_WM_1/FeatureServer/0",
+				{
+					mode:FeatureLayer.MODE_SNAPSHOT,
+					outFields:[
+						"OBJECTID", "NAME", "ST", "POP2007", "HtestDay", "HtestDay_Future1", "AvgHotDays"
+					]
+			});
+			flCities.htmlPopupType = FeatureLayer.POPUP_HTML_TEXT;
+			flCities.infoTemplate = itPopup;
+			flCities.on("click", onCitySelected);
+	        
+	        map.addLayer(flCities);
+	        
+	        var tlReference = new ArcGISTiledMapServiceLayer(
+	        	"http://tiles.arcgis.com/tiles/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Dark_Gray_Reference_Beta/MapServer");
+	        map.addLayer(tlReference);
+	        
+	        //update the app 
+	        dom.byId("title").innerHTML = "Heat Index";
+	        dom.byId("subtitle").innerHTML = "Heat index example";
+
+
+	        //add the scalebar 
+	        var scalebar = new Scalebar({
+				map: map,
+				scalebarUnit: "english"
+	 		});
+
+		});
+
+		function onCitySelected(clickEvent) {
+			var aryGraphics = clickEvent.graphic._graphicsLayer.graphics;
+			console.log(aryGraphics);
+			var gpcSelectedCity = clickEvent.graphic;
+			var nTargetCityIdx = clickEvent.graphic.attributes["HtestDay"];
+			// Sort graphics in order of closest heat indices to selected city 
+			aryGraphics.sort(function(a, b) {
+				var diffA = Math.abs(nTargetCityIdx - a.attributes["HtestDay"]);
+				var diffB = Math.abs(nTargetCityIdx - b.attributes["HtestDay"]);
+				return diffA - diffB;
+			});
+			var aryClosestCities = [];
+			for (var i = 0, citiesAnalyzed = 0; citiesAnalyzed < 5; i++) {
+				var g = aryGraphics[i];
+				if (g.attributes["OBJECTID"] != clickEvent.graphic.attributes["OBJECTID"]) {
+					aryClosestCities.push(g);
+					citiesAnalyzed++;
+				}
+			}
+			
+			// Now draw connecting lines to the closest cities
+			glCityConnectors.clear();
+			for (var i = 0; i < aryClosestCities.length; i++) {
+				var gpcNearbyCity = aryClosestCities[i];
+				var pl = new Polyline([
+					[gpcSelectedCity.geometry.x, gpcSelectedCity.geometry.y],
+					[gpcNearbyCity.geometry.x, gpcNearbyCity.geometry.y]
+				]);
+				pl.spatialReference = map.spatialReference;
+				var gpcConnector = new Graphic(pl);
+				// glCityConnectors.add(gpcConnector);
+				animatePolyline(gpcConnector, glCityConnectors);
+			}
+			
+		};
+
+
+        function animatePolyline(myGraphic, myGraphicLayer){
+			// Perform some initial inspection and store some helper attributes about the geometry...
+		  		
+          dojo.animateProperty({
+            node:dojo.create('div'),
+            properties:{
+             along:{
+                start:0,
+                end:100
+              }
+            },
+            duration:5000,
+            beforeBegin:function(){
+  			  		initPolyline(myGraphic, myGraphicLayer);
+            },
+            onAnimate:function(values){
+              // values assumes to be in pixels so we need to remove px from the end...
+              var percent = parseFloat(values.along.replace(/px/,''));
+              updatePolyline(myGraphic, percent);
+              if (!myGraphic.visible) myGraphic.visible = true;
+            },
+            onEnd:function() {
+            	myGraphic.setGeometry(myGraphic.originalGeometry);
+            }
+          }).play();
+
+        }
+
+        function updatePolyline(graphic, percent){
+          var geometry = percentOfPolyline(graphic, percent);
+          graphic.setGeometry(geometry);
+
+        }
+        
+	});
+    </script>
+  </head>
+
+  <body class="claro">
+    <div id="mainWindow" data-dojo-type="dijit/layout/BorderContainer" data-dojo-props="design:'headline'" style="width:100%; height:100%;">
+      <div id="header" class="shadow roundedCorners" data-dojo-type="dijit/layout/ContentPane" data-dojo-props="region:'top'">
+        <div id="title"></div>
+        <div id="subtitle"></div>
+      </div>
+      <div id="map" class="roundedCorners shadow" data-dojo-type="dijit/layout/ContentPane" data-dojo-props="region:'center'" style="height:100%;"></div>
+      <div id="rightPane" class="roundedCorners shadow" data-dojo-type="dijit/layout/ContentPane" data-dojo-props="region:'right'" >
+        <div id="legend"></div>
+      </div>
+    </div>
+  </body>
+</html>
