@@ -7,22 +7,38 @@
 
     <link rel="stylesheet" href="http://js.arcgis.com/3.9/js/dojo/dijit/themes/claro/claro.css">
     <link rel="stylesheet" href="http://js.arcgis.com/3.9/js/esri/css/esri.css">
+ 	<link rel="stylesheet" href="js/customInfoWindow/CustomInfoWindow.css"/>
     <link rel="stylesheet" href="css/layout.css">
-
+	<!-- <link rel="stylesheet" href="dojox/grid/resources/Grid.css">
+	<link rel="stylesheet" href="dojox/grid/resources/claroGrid.css"> -->
+		
+    <script>
+    var dojoConfig = {
+   	// parseOnLoad: true,
+  		packages: [{
+        	name: 		"customInfoWindow",
+        	location: 	location.pathname.replace(/\/[^/]+$/, '') + "/js/customInfoWindow"
+		}]
+    };
+    </script>
 
     <script src="http://js.arcgis.com/3.9/"></script>
  	<script src="js/AnimatePolyline.js"></script>
- 
-     <script>
+ 	
+    <script>
     var glCityConnectors; 	// Graphics layer for the lines connecting a chosen city to its closest analogs
     var flCities;			// Graphics layer for the city features
     var map;
 	require([
         "dojo/parser",
         "dojo/ready",
+        "dijit/registry",
         "dijit/layout/BorderContainer",
         "dijit/layout/ContentPane",
         "dojo/dom",
+        "dojo/dom-construct",
+        "dojo/data/ItemFileReadStore",
+        "dojox/grid/DataGrid",
         "esri/map", 
         "esri/urlUtils",
         "esri/arcgis/utils",
@@ -36,16 +52,21 @@
         "esri/renderers/SimpleRenderer",
         "esri/Color",
         "esri/graphic",
+        "customInfoWindow/CustomInfoWindow",
         "esri/InfoTemplate",
         "esri/dijit/Legend",
-        "esri/dijit/Scalebar",
+        "esri/dijit/Scalebar",        
         "dojo/domReady!"
 	], function(
         parser,
         ready,
+        registry,
         BorderContainer,
         ContentPane,
         dom,
+        domConstruct,
+        ItemFileReadStore,
+        DataGrid,
         Map,
         urlUtils,
         arcgisUtils,
@@ -59,6 +80,7 @@
         SimpleRenderer,
         Color,
         Graphic,
+        CustomInfoWindow,
         InfoTemplate,
         Legend,
         Scalebar
@@ -73,6 +95,12 @@
 					spatialReference:{wkid:102100}
 				})
 			});
+			//create the custom info window specifying any input options
+			var infoWindow = new CustomInfoWindow({ domNode: domConstruct.create("div", null, dom.byId("map"))});
+			// infoWindow.startup();
+			map.setInfoWindow(infoWindow);
+
+
 			var tlBasemap = new ArcGISTiledMapServiceLayer(
 				"http://tiles.arcgis.com/tiles/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Dark_Gray_Base_Beta/MapServer");
 			map.addLayer(tlBasemap);
@@ -97,10 +125,13 @@
 					mode:FeatureLayer.MODE_SNAPSHOT,
 					outFields:[
 						"OBJECTID", "NAME", "ST", "POP2007", "HtestDay", "HtestDay_Future1", "AvgHotDays"
-					]
+					],
+					htmlPopupType: FeatureLayer.POPUP_HTML_TEXT,
+					infoTemplate: itPopup
 			});
-			flCities.htmlPopupType = FeatureLayer.POPUP_HTML_TEXT;
-			flCities.infoTemplate = itPopup;
+			
+			// infoWindow.resize(100, 100);
+
 			flCities.on("click", onCitySelected);
 	        
 	        map.addLayer(flCities);
@@ -142,6 +173,14 @@
 				}
 			}
 			
+			// Get data for datagrid
+			var aryClosestCityTable = aryClosestCities.map(function(gpcClosestCity) {
+				return gpcClosestCity.attributes;
+			});
+			var store = new ItemFileReadStore({data: {items: aryClosestCityTable}});
+			var dgClosestCities = registry.byId("dgResults");
+			dgClosestCities.setStore(store);
+			
 			// Now draw connecting lines to the closest cities
 			glCityConnectors.clear();
 			for (var i = 0; i < aryClosestCities.length; i++) {
@@ -155,7 +194,6 @@
 				// glCityConnectors.add(gpcConnector);
 				animatePolyline(gpcConnector, glCityConnectors);
 			}
-			
 		};
 
 
@@ -203,9 +241,30 @@
         <div id="title"></div>
         <div id="subtitle"></div>
       </div>
+      
       <div id="map" class="roundedCorners shadow" data-dojo-type="dijit/layout/ContentPane" data-dojo-props="region:'center'" style="height:100%;"></div>
+      
       <div id="rightPane" class="roundedCorners shadow" data-dojo-type="dijit/layout/ContentPane" data-dojo-props="region:'right'" >
-        <div id="legend"></div>
+          <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'left'" style="width:300px;">
+    <!--Refer to field by the position id, since the data doesn't have field
+    names-->
+    <table data-dojo-type="dojox.grid.DataGrid" jsid="dgResults" id="dgResults" >
+      <thead>
+        <tr>
+          <th field="NAME" width="50%">
+            City 
+          </th>
+          <th field="ST" width="15%">
+            St
+          </th>
+          <th field="HtestDay" width="35%">
+            Index
+          </th>
+        </tr>
+      </thead>
+    </table>
+    </div>
+
       </div>
     </div>
   </body>

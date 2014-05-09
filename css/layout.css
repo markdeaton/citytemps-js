@@ -64,3 +64,9 @@
   .esriLegendServiceLabel{
     display:none;
   }
+  
+#dgResults{
+	background-color:#1B191E;
+	color:#663399;
+	font-size:small;
+}
