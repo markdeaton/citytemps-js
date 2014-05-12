@@ -24,7 +24,8 @@
 
     <script src="http://js.arcgis.com/3.9/"></script>
  	<script src="js/AnimatePolyline.js"></script>
- 	
+ 	<script src="config.js"></script>
+ 		
     <script>
     var glCityConnectors; 	// Graphics layer for the lines connecting a chosen city to its closest analogs
     var flCities;			// Graphics layer for the city features
@@ -39,6 +40,7 @@
         "dojo/dom-construct",
         "dojo/data/ItemFileReadStore",
         "dojox/grid/DataGrid",
+        "dojox/json/query",
         "esri/map", 
         "esri/urlUtils",
         "esri/arcgis/utils",
@@ -67,6 +69,7 @@
         domConstruct,
         ItemFileReadStore,
         DataGrid,
+        JSONQuery,
         Map,
         urlUtils,
         arcgisUtils,
@@ -102,7 +105,7 @@
 
 
 			var tlBasemap = new ArcGISTiledMapServiceLayer(
-				"http://tiles.arcgis.com/tiles/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Dark_Gray_Base_Beta/MapServer");
+				config.services.basemap);
 			map.addLayer(tlBasemap);
 
 			// Set up and add the connecting-lines graphics layer
@@ -117,15 +120,13 @@
 			map.addLayer(glCityConnectors);
 			
 			// Define the popup for the cities			
-			var itPopup = new InfoTemplate("${NAME}, ${ST}", "Index: <b>${HtestDay}</b> (for 2010)");
+			var itPopup = new InfoTemplate("${NAME}, ${ST}", "Index: <b>${AvgSummer_HI}</b> (for 2010)");
 			
 			flCities = new FeatureLayer(
-				"http://services.arcgis.com/6DIQcwlPy8knb6sg/arcgis/rest/services/HeatIndex_WM_1/FeatureServer/0",
+				config.services.cities,
 				{
 					mode:FeatureLayer.MODE_SNAPSHOT,
-					outFields:[
-						"OBJECTID", "NAME", "ST", "POP2007", "HtestDay", "HtestDay_Future1", "AvgHotDays"
-					],
+					outFields:["*"],
 					htmlPopupType: FeatureLayer.POPUP_HTML_TEXT,
 					infoTemplate: itPopup
 			});
@@ -154,14 +155,15 @@
 		});
 
 		function onCitySelected(clickEvent) {
+			var sHIFieldName = JSONQuery("$.fieldmap[?label='2010'][0].fields[?field='AvgSummer_HI'][0].fieldname", config);
 			var aryGraphics = clickEvent.graphic._graphicsLayer.graphics;
 			console.log(aryGraphics);
 			var gpcSelectedCity = clickEvent.graphic;
-			var nTargetCityIdx = clickEvent.graphic.attributes["HtestDay"];
+			var nTargetCityIdx = clickEvent.graphic.attributes[sHIFieldName];
 			// Sort graphics in order of closest heat indices to selected city 
 			aryGraphics.sort(function(a, b) {
-				var diffA = Math.abs(nTargetCityIdx - a.attributes["HtestDay"]);
-				var diffB = Math.abs(nTargetCityIdx - b.attributes["HtestDay"]);
+				var diffA = Math.abs(nTargetCityIdx - a.attributes[sHIFieldName]);
+				var diffB = Math.abs(nTargetCityIdx - b.attributes[sHIFieldName]);
 				return diffA - diffB;
 			});
 			var aryClosestCities = [];
@@ -257,7 +259,7 @@
           <th field="ST" width="15%">
             St
           </th>
-          <th field="HtestDay" width="35%">
+          <th field="AvgSummer_HI" width="35%">
             Index
           </th>
         </tr>
