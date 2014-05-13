@@ -144,9 +144,11 @@
 	        map.addLayer(tlReference);
 	        
 	        // Set up dropdown list of years
-	        var yearDataStore = new ItemFileReadStore({data: {items: config.fieldmap}});
-	        registry.byId("year").setStore(yearDataStore, 0);
-	        
+	        // var yearDataStore = new ItemFileReadStore({data: {items: config.fieldmap}});
+	        var ddlYear = registry.byId("ddlYear");
+	        ddlYear.setStore(yearDataStore);
+			ddlYear.startup();
+			
 	        //update the app 
 	        dom.byId("title").innerHTML = "Heat Index";
 	        dom.byId("subtitle").innerHTML = "Heat index example";
@@ -186,7 +188,7 @@
 				return gpcClosestCity.attributes;
 			});
 			var store = new ItemFileReadStore({data: {items: aryClosestCityTable}});
-			var dgClosestCities = registry.byId("dgResults");
+			var dgClosestCities = registry.byId("dgClosestCities");
 			dgClosestCities.setStore(store);
 			
 			// Now draw connecting lines to the closest cities
@@ -244,20 +246,19 @@
   </head>
 
 	<body class="claro">
-		<div id="mainWindow" data-dojo-type="dijit/layout/BorderContainer" data-dojo-props="design:'headline'" style="width:100%; height:100%;">
-			<div id="header" class="shadow roundedCorners" data-dojo-type="dijit/layout/ContentPane" data-dojo-props="region:'top'">
+		<div id="mainWindow" data-dojo-type="dijit.layout.BorderContainer" data-dojo-props="design:'headline'" style="width:100%; height:100%;">
+			<div id="header" class="shadow roundedCorners" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'top'">
 				<div id="title"></div>
 				<div id="subtitle"></div>
 			</div>
 
-			<div id="map" class="roundedCorners shadow" data-dojo-type="dijit/layout/ContentPane" data-dojo-props="region:'center'" style="height:100%;"></div>
+			<div id="map" class="roundedCorners shadow" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'center'" style="height:100%;"></div>
 
-			<div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'right'" style="width:300px;">
+			<div id="rightPane" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'right'" style="width:300px;">
 				<!--Refer to field by the position id, since the data doesn't have field
 				names-->
-				<div id="year" jsid="year" data-dojo-type="dijit/form/Select"></div>
-				<p/>
-				<table data-dojo-type="dojox.grid.DataGrid" jsid="dgResults" id="dgResults" >
+
+				<table data-dojo-type="dojox.grid.DataGrid" jsid="dgClosestCities" id="dgClosestCities">
 					<thead>
 						<tr>
 							<th field="NAME" width="50%"> City </th>
@@ -266,9 +267,9 @@
 						</tr>
 					</thead>
 				</table>
+				<select id="ddlYear" jsid="ddlYear" data-dojo-type="dijit.form.Select"></select>
 			</div>
 
-			</div>
 		</div>
 	</body>
 </html>

@@ -65,8 +65,9 @@
     display:none;
   }
   
-#dgResults{
+#dgClosestCities{
 	background-color:#1B191E;
 	color:#663399;
 	font-size:small;
+	height:150px;
 }

@@ -136,3 +136,12 @@ var config = {
 	 ]}
 	]
 };
+
+var aselect = [
+	{"label":"one", "id":"1"},
+	{"label":"two", "id":"2"},
+	{"label":"three", "id":"3"}
+];
+
+var yearDataStore = new ItemFileReadStore({data:{identifier:"id", label:"label", items: aselect}});
+
