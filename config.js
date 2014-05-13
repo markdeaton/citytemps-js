@@ -3,6 +3,7 @@ var config = {
 		"basemap":"http://tiles.arcgis.com/tiles/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Dark_Gray_Base_Beta/MapServer",
 		"cities" :"http://services.arcgis.com/6DIQcwlPy8knb6sg/arcgis/rest/services/HeatIndex_WM_2/FeatureServer/0"
 	},
+	"baselineYear":"2010",
 	"fieldmap": [
 	{"label"	: "2010",
 	 "fields"	: [
@@ -20,7 +21,7 @@ var config = {
 	{"label"	: "2020",
 	 "fields"	: [
 	 	{"field" : "AvgJJA_HI", "fieldname" : "AvgJJA_HI"},
-	 	{"field" : "AvgSummer_HI", "fieldname" : "AvgSummer_HI"},
+	 	{"field" : "AvgSummer_HI", "fieldname" : "AvgSummer_HI_1"},
 	 	{"field" : "HtIdxCaut", "fieldname" : "HtIdxCaut"},
 	 	{"field" : "HtIdxECaut", "fieldname" : "HtIdxECaut"},
 	 	{"field" : "HtIdxDanger", "fieldname" : "HtIdxDanger"},
@@ -33,7 +34,7 @@ var config = {
 	{"label"	: "2030",
 	 "fields"	: [
 	 	{"field" : "AvgJJA_HI", "fieldname" : "AvgJJA_HI"},
-	 	{"field" : "AvgSummer_HI", "fieldname" : "AvgSummer_HI"},
+	 	{"field" : "AvgSummer_HI", "fieldname" : "AvgSummer_HI_12"},
 	 	{"field" : "HtIdxCaut", "fieldname" : "HtIdxCaut"},
 	 	{"field" : "HtIdxECaut", "fieldname" : "HtIdxECaut"},
 	 	{"field" : "HtIdxDanger", "fieldname" : "HtIdxDanger"},
@@ -46,7 +47,7 @@ var config = {
 	{"label"	: "2040",
 	 "fields"	: [
 	 	{"field" : "AvgJJA_HI", "fieldname" : "AvgJJA_HI"},
-	 	{"field" : "AvgSummer_HI", "fieldname" : "AvgSummer_HI"},
+	 	{"field" : "AvgSummer_HI", "fieldname" : "AvgSummer_HI_12_13"},
 	 	{"field" : "HtIdxCaut", "fieldname" : "HtIdxCaut"},
 	 	{"field" : "HtIdxECaut", "fieldname" : "HtIdxECaut"},
 	 	{"field" : "HtIdxDanger", "fieldname" : "HtIdxDanger"},
@@ -59,7 +60,7 @@ var config = {
 	{"label"	: "2050",
 	 "fields"	: [
 	 	{"field" : "AvgJJA_HI", "fieldname" : "AvgJJA_HI"},
-	 	{"field" : "AvgSummer_HI", "fieldname" : "AvgSummer_HI"},
+	 	{"field" : "AvgSummer_HI", "fieldname" : "AvgSummer_HI_12_13_14"},
 	 	{"field" : "HtIdxCaut", "fieldname" : "HtIdxCaut"},
 	 	{"field" : "HtIdxECaut", "fieldname" : "HtIdxECaut"},
 	 	{"field" : "HtIdxDanger", "fieldname" : "HtIdxDanger"},
@@ -72,7 +73,7 @@ var config = {
 	{"label"	: "2060",
 	 "fields"	: [
 	 	{"field" : "AvgJJA_HI", "fieldname" : "AvgJJA_HI"},
-	 	{"field" : "AvgSummer_HI", "fieldname" : "AvgSummer_HI"},
+	 	{"field" : "AvgSummer_HI", "fieldname" : "AvgSummer_HI_12_13_14_15"},
 	 	{"field" : "HtIdxCaut", "fieldname" : "HtIdxCaut"},
 	 	{"field" : "HtIdxECaut", "fieldname" : "HtIdxECaut"},
 	 	{"field" : "HtIdxDanger", "fieldname" : "HtIdxDanger"},
@@ -85,7 +86,7 @@ var config = {
 	{"label"	: "2070",
 	 "fields"	: [
 	 	{"field" : "AvgJJA_HI", "fieldname" : "AvgJJA_HI"},
-	 	{"field" : "AvgSummer_HI", "fieldname" : "AvgSummer_HI"},
+	 	{"field" : "AvgSummer_HI", "fieldname" : "AvgSummer_HI_12_13_14_15_16"},
 	 	{"field" : "HtIdxCaut", "fieldname" : "HtIdxCaut"},
 	 	{"field" : "HtIdxECaut", "fieldname" : "HtIdxECaut"},
 	 	{"field" : "HtIdxDanger", "fieldname" : "HtIdxDanger"},
@@ -98,7 +99,7 @@ var config = {
 	{"label"	: "2080",
 	 "fields"	: [
 	 	{"field" : "AvgJJA_HI", "fieldname" : "AvgJJA_HI"},
-	 	{"field" : "AvgSummer_HI", "fieldname" : "AvgSummer_HI"},
+	 	{"field" : "AvgSummer_HI", "fieldname" : "AvgSummer_HI_12_13_14_15_16_17"},
 	 	{"field" : "HtIdxCaut", "fieldname" : "HtIdxCaut"},
 	 	{"field" : "HtIdxECaut", "fieldname" : "HtIdxECaut"},
 	 	{"field" : "HtIdxDanger", "fieldname" : "HtIdxDanger"},
@@ -111,7 +112,7 @@ var config = {
 	{"label"	: "2090",
 	 "fields"	: [
 	 	{"field" : "AvgJJA_HI", "fieldname" : "AvgJJA_HI"},
-	 	{"field" : "AvgSummer_HI", "fieldname" : "AvgSummer_HI"},
+	 	{"field" : "AvgSummer_HI", "fieldname" : "AvgSummer_HI_12_13_14_15_16_17_"},
 	 	{"field" : "HtIdxCaut", "fieldname" : "HtIdxCaut"},
 	 	{"field" : "HtIdxECaut", "fieldname" : "HtIdxECaut"},
 	 	{"field" : "HtIdxDanger", "fieldname" : "HtIdxDanger"},
@@ -124,7 +125,7 @@ var config = {
 	{"label"	: "2100",
 	 "fields"	: [
 	 	{"field" : "AvgJJA_HI", "fieldname" : "AvgJJA_HI"},
-	 	{"field" : "AvgSummer_HI", "fieldname" : "AvgSummer_HI"},
+	 	{"field" : "AvgSummer_HI", "fieldname" : "AvgSummer_HI_12_13_14_15_16_171"},
 	 	{"field" : "HtIdxCaut", "fieldname" : "HtIdxCaut"},
 	 	{"field" : "HtIdxECaut", "fieldname" : "HtIdxECaut"},
 	 	{"field" : "HtIdxDanger", "fieldname" : "HtIdxDanger"},
@@ -136,12 +137,3 @@ var config = {
 	 ]}
 	]
 };
-
-var aselect = [
-	{"label":"one", "id":"1"},
-	{"label":"two", "id":"2"},
-	{"label":"three", "id":"3"}
-];
-
-var yearDataStore = new ItemFileReadStore({data:{identifier:"id", label:"label", items: aselect}});
-

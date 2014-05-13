@@ -29,6 +29,7 @@
     <script>
     var glCityConnectors; 	// Graphics layer for the lines connecting a chosen city to its closest analogs
     var flCities;			// Graphics layer for the city features
+    var gpcSelectedCity = null;
     var map;
 	require([
         "dojo/parser",
@@ -145,8 +146,17 @@
 	        
 	        // Set up dropdown list of years
 	        // var yearDataStore = new ItemFileReadStore({data: {items: config.fieldmap}});
-	        var ddlYear = registry.byId("ddlYear");
-	        ddlYear.setStore(yearDataStore);
+			var yearDataStore = new ItemFileReadStore({
+				data:{
+					identifier:"label", label:"label", items: config.fieldmap
+				},				
+				"hierarchical": false
+			});
+	        var ddlYear = new Select({
+                name: "ddlYear",
+                store: yearDataStore
+            }, "ddlYear");
+			ddlYear.on("change", onYearSelected);
 			ddlYear.startup();
 			
 	        //update the app 
@@ -162,22 +172,46 @@
 
 		});
 
+		function onYearSelected(changeEvent) {
+			showNearestCities();
+		}
+		
 		function onCitySelected(clickEvent) {
-			var sHIFieldName = JSONQuery("$.fieldmap[?label='2010'][0].fields[?field='AvgSummer_HI'][0].fieldname", config);
-			var aryGraphics = clickEvent.graphic._graphicsLayer.graphics;
-			console.log(aryGraphics);
-			var gpcSelectedCity = clickEvent.graphic;
-			var nTargetCityIdx = clickEvent.graphic.attributes[sHIFieldName];
+			gpcSelectedCity = clickEvent.graphic;
+			showNearestCities();
+		}
+		
+		function showNearestCities() {
+			const baselineYear = 2010;
+			
+			var ddlYear = registry.byId("ddlYear");
+			var selectedYearVal = ddlYear.get("value");
+			
+			// Two conditions needed: graphic and year must be chosen
+			if (gpcSelectedCity == null || selectedYearVal == null) return;
+
+			var sHIFieldNameToday = JSONQuery(
+				"$[?label='" + baselineYear + "'][0].fields[?field='AvgSummer_HI'][0].fieldname",
+				config.fieldmap);
+			var sHIFieldNameSelectedYear = JSONQuery(
+				"$[?label='" + selectedYearVal + "'][0].fields[?field='AvgSummer_HI'][0].fieldname", 
+				config.fieldmap);
+			
+			
+			// var sHIFieldNameSelectedYear = JSONQuery("$.fields[?field='AvgSummer_HI'][0].fieldname", selectedYearVal);
+			var aryGraphics = gpcSelectedCity._graphicsLayer.graphics;
+
+			var nTargetCityIdx = gpcSelectedCity.attributes[sHIFieldNameToday];
 			// Sort graphics in order of closest heat indices to selected city 
 			aryGraphics.sort(function(a, b) {
-				var diffA = Math.abs(nTargetCityIdx - a.attributes[sHIFieldName]);
-				var diffB = Math.abs(nTargetCityIdx - b.attributes[sHIFieldName]);
+				var diffA = Math.abs(nTargetCityIdx - a.attributes[sHIFieldNameSelectedYear]);
+				var diffB = Math.abs(nTargetCityIdx - b.attributes[sHIFieldNameSelectedYear]);
 				return diffA - diffB;
 			});
 			var aryClosestCities = [];
 			for (var i = 0, citiesAnalyzed = 0; citiesAnalyzed < 5; i++) {
 				var g = aryGraphics[i];
-				if (g.attributes["OBJECTID"] != clickEvent.graphic.attributes["OBJECTID"]) {
+				if (g.attributes["OBJECTID"] != gpcSelectedCity.attributes["OBJECTID"]) {
 					aryClosestCities.push(g);
 					citiesAnalyzed++;
 				}
@@ -185,7 +219,13 @@
 			
 			// Get data for datagrid
 			var aryClosestCityTable = aryClosestCities.map(function(gpcClosestCity) {
-				return gpcClosestCity.attributes;
+				// return gpcClosestCity.attributes;
+				return {
+					"NAME": 	gpcClosestCity.attributes.NAME,
+					"ST": 		gpcClosestCity.attributes.ST,
+					// name of Value attribute must match that defined in the table attribute below in HTML
+					"Value": gpcClosestCity.attributes[sHIFieldNameSelectedYear]
+				};
 			});
 			var store = new ItemFileReadStore({data: {items: aryClosestCityTable}});
 			var dgClosestCities = registry.byId("dgClosestCities");
@@ -204,6 +244,11 @@
 				// glCityConnectors.add(gpcConnector);
 				animatePolyline(gpcConnector, glCityConnectors);
 			}
+			
+			// Update the right-pane descriptive text
+			updateDescription("average summer heat index", 
+				nTargetCityIdx, baselineYear, 
+				gpcSelectedCity.attributes.NAME, gpcSelectedCity.attributes.ST);
 		};
 
 
@@ -218,7 +263,7 @@
                 end:100
               }
             },
-            duration:5000,
+            duration:2500,
             beforeBegin:function(){
   			  		initPolyline(myGraphic, myGraphicLayer);
             },
@@ -241,6 +286,11 @@
 
         }
         
+        function updateDescription(field, value, year, city, state) {
+        	var sDesc = "For " + city + ", " + state + " in " + year + ", the " + field + " is " + value + ". "
+        		+ "Also shown are the five most similar cities in the year";
+        	dojo.byId("lblSelectDescription").innerHTML = sDesc;
+        }
 	});
     </script>
   </head>
@@ -252,22 +302,23 @@
 				<div id="subtitle"></div>
 			</div>
 
-			<div id="map" class="roundedCorners shadow" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'center'" style="height:100%;"></div>
+			<div id="map" class="roundedCorners shadow" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'center'" style="height:50%;"></div>
 
-			<div id="rightPane" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'right'" style="width:300px;">
+			<div id="rightPane" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'right'">
 				<!--Refer to field by the position id, since the data doesn't have field
 				names-->
-
+				<label id="lblSelectDescription">Click a city to see its average summertime heat index for 2010. You'll also see the five most similar cities in the year</label>
+				<div id="ddlYear"></div>
+				<br/><br/>
 				<table data-dojo-type="dojox.grid.DataGrid" jsid="dgClosestCities" id="dgClosestCities">
 					<thead>
 						<tr>
 							<th field="NAME" width="50%"> City </th>
 							<th field="ST" width="15%"> St </th>
-							<th field="AvgSummer_HI" width="35%"> Index </th>
+							<th field="Value" width="35%"> Index </th>
 						</tr>
 					</thead>
 				</table>
-				<select id="ddlYear" jsid="ddlYear" data-dojo-type="dijit.form.Select"></select>
 			</div>
 
 		</div>
