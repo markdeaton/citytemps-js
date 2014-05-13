@@ -40,6 +40,7 @@
         "dijit/form/Select",
         "dojo/dom",
         "dojo/dom-construct",
+        "dojo/dom-style",
         "dojo/data/ItemFileReadStore",
         "dojox/grid/DataGrid",
         "dojox/json/query",
@@ -70,6 +71,7 @@
         Select,
         dom,
         domConstruct,
+        domStyle,
         ItemFileReadStore,
         DataGrid,
         JSONQuery,
@@ -230,6 +232,7 @@
 			var store = new ItemFileReadStore({data: {items: aryClosestCityTable}});
 			var dgClosestCities = registry.byId("dgClosestCities");
 			dgClosestCities.setStore(store);
+			domStyle.set("dgClosestCities", {"visibility": "visible"});
 			
 			// Now draw connecting lines to the closest cities
 			glCityConnectors.clear();
@@ -310,7 +313,7 @@
 				<label id="lblSelectDescription">Click a city to see its average summertime heat index for 2010. You'll also see the five most similar cities in the year</label>
 				<div id="ddlYear"></div>
 				<br/><br/>
-				<table data-dojo-type="dojox.grid.DataGrid" jsid="dgClosestCities" id="dgClosestCities">
+				<table data-dojo-type="dojox.grid.DataGrid" jsid="dgClosestCities" id="dgClosestCities" style="visibility:hidden">
 					<thead>
 						<tr>
 							<th field="NAME" width="50%"> City </th>
