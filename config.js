@@ -1,7 +1,7 @@
 var config = {
 	"services": {
 		"basemap":"http://tiles.arcgis.com/tiles/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Dark_Gray_Base_Beta/MapServer",
-		"cities" :"http://services.arcgis.com/6DIQcwlPy8knb6sg/arcgis/rest/services/HeatIndex_WM_2/FeatureServer/0"
+		"cities" :"http://services.arcgis.com/6DIQcwlPy8knb6sg/arcgis/rest/services/HeatIndex_WM_3/FeatureServer/0"
 	},
 	"baselineYear":"2010",
 	"fieldmap": [
@@ -113,19 +113,6 @@ var config = {
 	 "fields"	: [
 	 	{"field" : "AvgJJA_HI", "fieldname" : "AvgJJA_HI"},
 	 	{"field" : "AvgSummer_HI", "fieldname" : "AvgSummer_HI_12_13_14_15_16_17_"},
-	 	{"field" : "HtIdxCaut", "fieldname" : "HtIdxCaut"},
-	 	{"field" : "HtIdxECaut", "fieldname" : "HtIdxECaut"},
-	 	{"field" : "HtIdxDanger", "fieldname" : "HtIdxDanger"},
-	 	{"field" : "HtIdxEDanger", "fieldname" : "HtIdxEDanger"},
-	 	{"field" : "ConsecHtIdxCaut", "fieldname" : "ConsecHtIdxCaut"},
-	 	{"field" : "ConsecHtIdxECaut", "fieldname" : "ConsecHtIdxECaut"},
-	 	{"field" : "ConsecHtIdxDanger", "fieldname" : "ConsecHtIdxDanger"},
-	 	{"field" : "ConsecHtIdxEDanger", "fieldname" : "ConsecHtIdxEDanger"}
-	 ]},
-	{"label"	: "2100",
-	 "fields"	: [
-	 	{"field" : "AvgJJA_HI", "fieldname" : "AvgJJA_HI"},
-	 	{"field" : "AvgSummer_HI", "fieldname" : "AvgSummer_HI_12_13_14_15_16_171"},
 	 	{"field" : "HtIdxCaut", "fieldname" : "HtIdxCaut"},
 	 	{"field" : "HtIdxECaut", "fieldname" : "HtIdxECaut"},
 	 	{"field" : "HtIdxDanger", "fieldname" : "HtIdxDanger"},

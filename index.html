@@ -30,6 +30,7 @@
     var glCityConnectors; 	// Graphics layer for the lines connecting a chosen city to its closest analogs
     var flCities;			// Graphics layer for the city features
     var gpcSelectedCity = null;
+    var itPopup;
     var map;
 	require([
         "dojo/parser",
@@ -124,8 +125,9 @@
 			
 			map.addLayer(glCityConnectors);
 			
-			// Define the popup for the cities			
-			var itPopup = new InfoTemplate("${NAME}, ${ST}", "Index: <b>${AvgSummer_HI}</b> (for 2010)");
+			// Define the popup for the cities; the body of the message changes by chosen year
+			// and will be updated in the onChange event for the Select widget
+			itPopup = new InfoTemplate("${NAME}, ${ST}");
 			
 			flCities = new FeatureLayer(
 				config.services.cities,
@@ -159,6 +161,7 @@
                 store: yearDataStore
             }, "ddlYear");
 			ddlYear.on("change", onYearSelected);
+			ddlYear.onChange();
 			ddlYear.startup();
 			
 	        //update the app 
@@ -192,6 +195,15 @@
 			// Two conditions needed: graphic and year must be chosen
 			if (gpcSelectedCity == null || selectedYearVal == null) return;
 
+			// Update the body of the popup with an updated field reference for the chosen year
+			var updatedField = JSONQuery(
+				"$[?label='" + selectedYearVal + "'][0].fields[?field='AvgSummer_HI'][0].fieldname", 
+				config.fieldmap);
+			// var sContent = "Index: <b>${" + updatedField + "}</b> (for chosen year)";
+			var sContent = "Index: <b>" + gpcSelectedCity.attributes[updatedField] + "</b> (for chosen year)";
+			itPopup.setContent(sContent);
+			map.infoWindow.setContent(sContent);
+			
 			var sHIFieldNameToday = JSONQuery(
 				"$[?label='" + baselineYear + "'][0].fields[?field='AvgSummer_HI'][0].fieldname",
 				config.fieldmap);
@@ -203,11 +215,11 @@
 			// var sHIFieldNameSelectedYear = JSONQuery("$.fields[?field='AvgSummer_HI'][0].fieldname", selectedYearVal);
 			var aryGraphics = gpcSelectedCity._graphicsLayer.graphics;
 
-			var nTargetCityIdx = gpcSelectedCity.attributes[sHIFieldNameToday];
+			var nTargetCityIdx = gpcSelectedCity.attributes[sHIFieldNameSelectedYear];
 			// Sort graphics in order of closest heat indices to selected city 
 			aryGraphics.sort(function(a, b) {
-				var diffA = Math.abs(nTargetCityIdx - a.attributes[sHIFieldNameSelectedYear]);
-				var diffB = Math.abs(nTargetCityIdx - b.attributes[sHIFieldNameSelectedYear]);
+				var diffA = Math.abs(nTargetCityIdx - a.attributes[sHIFieldNameToday]);
+				var diffB = Math.abs(nTargetCityIdx - b.attributes[sHIFieldNameToday]);
 				return diffA - diffB;
 			});
 			var aryClosestCities = [];
@@ -226,7 +238,7 @@
 					"NAME": 	gpcClosestCity.attributes.NAME,
 					"ST": 		gpcClosestCity.attributes.ST,
 					// name of Value attribute must match that defined in the table attribute below in HTML
-					"Value": gpcClosestCity.attributes[sHIFieldNameSelectedYear]
+					"Value": gpcClosestCity.attributes[sHIFieldNameToday]
 				};
 			});
 			var store = new ItemFileReadStore({data: {items: aryClosestCityTable}});
@@ -289,10 +301,12 @@
 
         }
         
-        function updateDescription(field, value, year, city, state) {
-        	var sDesc = "For " + city + ", " + state + " in " + year + ", the " + field + " is " + value + ". "
-        		+ "Also shown are the five most similar cities in the year";
-        	dojo.byId("lblSelectDescription").innerHTML = sDesc;
+        function updateDescription(field, value, baselineYear, city, state) {
+        	var sDesc1 = "For " + city + ", " + state + " in ";
+        	var sDesc2 =  ", the " + field + " is " + value + ". "
+        		+ "Here are five cities that should feel similar right now:";
+        	dojo.byId("lblSelectDescription1").innerHTML = sDesc1;
+        	dojo.byId("lblSelectDescription2").innerHTML = sDesc2;
         }
 	});
     </script>
@@ -310,8 +324,9 @@
 			<div id="rightPane" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'right'">
 				<!--Refer to field by the position id, since the data doesn't have field
 				names-->
-				<label id="lblSelectDescription">Click a city to see its average summertime heat index for 2010. You'll also see the five most similar cities in the year</label>
+				<label id="lblSelectDescription1">Click a city to see its average summertime heat index for</label>
 				<div id="ddlYear"></div>
+				<label id="lblSelectDescription2">. You'll also see the five cities that feel most like it right now.</label>
 				<br/><br/>
 				<table data-dojo-type="dojox.grid.DataGrid" jsid="dgClosestCities" id="dgClosestCities" style="visibility:hidden">
 					<thead>
