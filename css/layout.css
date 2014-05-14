@@ -17,7 +17,7 @@
     background-color:#999;
     background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#C0C0C0));
     background: -moz-linear-gradient(top,  #fff,  #C0C0C0);
-    height:65px;
+    height:35px;
     margin: 5px 5px;
   }
 
@@ -37,11 +37,11 @@
   #title{
     padding-top:2px;
     padding-left:10px;
-    color:#000;
+    color:#333333;
     font-size:18pt;
     text-align:left;
     text-shadow: 0px 1px 0px #e5e5ee;
-    font-weight:700;
+    font-weight:500;
   }
   #subtitle {
     font-size:small;

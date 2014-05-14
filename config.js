@@ -1,7 +1,7 @@
 var config = {
 	"services": {
 		"basemap":"http://tiles.arcgis.com/tiles/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Dark_Gray_Base_Beta/MapServer",
-		"cities" :"http://services.arcgis.com/6DIQcwlPy8knb6sg/arcgis/rest/services/HeatIndex_WM_3/FeatureServer/0"
+		"cities" :"http://services.arcgis.com/6DIQcwlPy8knb6sg/arcgis/rest/services/HeatIndex_WM_4/FeatureServer/0"
 	},
 	"baselineYear":"2010",
 	"fieldmap": [

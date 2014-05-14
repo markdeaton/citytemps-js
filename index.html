@@ -31,7 +31,10 @@
     var flCities;			// Graphics layer for the city features
     var gpcSelectedCity = null;
     var itPopup;
+    var aryChartData, cityChart;
+    const chartSeries = "DefaultSeries";
     var map;
+    
 	require([
         "dojo/parser",
         "dojo/ready",
@@ -45,6 +48,11 @@
         "dojo/data/ItemFileReadStore",
         "dojox/grid/DataGrid",
         "dojox/json/query",
+		"dojox/charting/Chart",
+ 		"dojox/charting/themes/Claro",
+	    "dojox/charting/plot2d/Lines",
+	    "dojox/charting/plot2d/Markers",
+	    "dojox/charting/axis2d/Default",
         "esri/map", 
         "esri/urlUtils",
         "esri/arcgis/utils",
@@ -76,6 +84,11 @@
         ItemFileReadStore,
         DataGrid,
         JSONQuery,
+        Chart,
+        ChartTheme,
+        ChartLines,
+        ChartMarkers,
+        ChartDefaultAxes,
         Map,
         urlUtils,
         arcgisUtils,
@@ -164,9 +177,12 @@
 			ddlYear.onChange();
 			ddlYear.startup();
 			
+			// Create the chart
+			createChart();
+			
 	        //update the app 
-	        dom.byId("title").innerHTML = "Heat Index";
-	        dom.byId("subtitle").innerHTML = "Heat index example";
+	        // dom.byId("title").innerHTML = "Heat Index";
+	        // dom.byId("subtitle").innerHTML = "Heat index example";
 
 
 	        //add the scalebar 
@@ -195,21 +211,17 @@
 			// Two conditions needed: graphic and year must be chosen
 			if (gpcSelectedCity == null || selectedYearVal == null) return;
 
-			// Update the body of the popup with an updated field reference for the chosen year
-			var updatedField = JSONQuery(
-				"$[?label='" + selectedYearVal + "'][0].fields[?field='AvgSummer_HI'][0].fieldname", 
-				config.fieldmap);
-			// var sContent = "Index: <b>${" + updatedField + "}</b> (for chosen year)";
-			var sContent = "Index: <b>" + gpcSelectedCity.attributes[updatedField] + "</b> (for chosen year)";
-			itPopup.setContent(sContent);
-			map.infoWindow.setContent(sContent);
-			
 			var sHIFieldNameToday = JSONQuery(
 				"$[?label='" + baselineYear + "'][0].fields[?field='AvgSummer_HI'][0].fieldname",
 				config.fieldmap);
 			var sHIFieldNameSelectedYear = JSONQuery(
 				"$[?label='" + selectedYearVal + "'][0].fields[?field='AvgSummer_HI'][0].fieldname", 
 				config.fieldmap);
+			
+			// Update the body of the popup with an updated field reference for the chosen year
+			var sContent = "Index: <b>" + gpcSelectedCity.attributes[sHIFieldNameSelectedYear] + "</b> (for chosen year)";
+			itPopup.setContent(sContent);
+			map.infoWindow.setContent(sContent);
 			
 			
 			// var sHIFieldNameSelectedYear = JSONQuery("$.fields[?field='AvgSummer_HI'][0].fieldname", selectedYearVal);
@@ -245,6 +257,18 @@
 			var dgClosestCities = registry.byId("dgClosestCities");
 			dgClosestCities.setStore(store);
 			domStyle.set("dgClosestCities", {"visibility": "visible"});
+			
+			// Update the chart
+			aryChartData = config.fieldmap.map(function(fieldItem){
+				var sFieldname = JSONQuery("$[?field='AvgSummer_HI'][0].fieldname", fieldItem.fields);
+				return gpcSelectedCity.attributes[sFieldname];
+			});
+			cityChart.title = gpcSelectedCity.attributes.NAME
+								+ ", " 
+								+ gpcSelectedCity.attributes.ST;
+			domStyle.set("cityChart", {"visibility":"visible"});
+			cityChart.updateSeries(chartSeries, aryChartData);
+			cityChart.fullRender();
 			
 			// Now draw connecting lines to the closest cities
 			glCityConnectors.clear();
@@ -308,6 +332,48 @@
         	dojo.byId("lblSelectDescription1").innerHTML = sDesc1;
         	dojo.byId("lblSelectDescription2").innerHTML = sDesc2;
         }
+        
+        function createChart() {
+		    // Create the chart within it's "holding" node
+		    cityChart = new Chart("cityChart");
+		 
+		    // Set the theme
+		    cityChart.setTheme(ChartTheme);
+		 
+		    // Add the only/default plot
+		    cityChart.addPlot("default", {
+		        type: "Lines",
+		        hAxis: "x",
+		        vAxis: "y",
+		        markers: true,
+		        stroke: {color:"tan"}, 
+		        fill: "lightgreen"
+		    });
+		 
+		    // Add axes
+		    cityChart.addAxis("x", {
+		    	labels: [
+		    		{value:1, text:"2010"},
+		    		{value:2, text:"2020"},
+		    		{value:3, text:"2030"},
+		    		{value:4, text:"2040"},
+		    		{value:5, text:"2050"},
+		    		{value:6, text:"2060"},
+		    		{value:7, text:"2070"},
+		    		{value:8, text:"2080"},
+		    		{value:9, text:"2090"}
+		    	]
+		    });
+		    cityChart.addAxis("y", { 
+		    	vertical: true, includeZero: false,  
+		    	fixLower: "major", fixUpper: "major", 
+		    	title: null
+		    });
+		 
+		    // Add the series of data
+		    cityChart.addSeries(chartSeries, []);
+		    // cityChart.render();
+        }
 	});
     </script>
   </head>
@@ -315,8 +381,8 @@
 	<body class="claro">
 		<div id="mainWindow" data-dojo-type="dijit.layout.BorderContainer" data-dojo-props="design:'headline'" style="width:100%; height:100%;">
 			<div id="header" class="shadow roundedCorners" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'top'">
-				<div id="title"></div>
-				<div id="subtitle"></div>
+				<div id="title">Summer Heat Index for Selected Cities</div>
+				<div id="subtitle" style="visibility:gone"></div>
 			</div>
 
 			<div id="map" class="roundedCorners shadow" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'center'" style="height:50%;"></div>
@@ -332,11 +398,15 @@
 					<thead>
 						<tr>
 							<th field="NAME" width="50%"> City </th>
-							<th field="ST" width="15%"> St </th>
+							<th field="ST" width="15%"></th>
 							<th field="Value" width="35%"> Index </th>
 						</tr>
 					</thead>
 				</table>
+				
+				<!-- The Chart -->
+				<div id="cityChart" style="width:100%; height:300px;"></div>
+				
 			</div>
 
 		</div>
