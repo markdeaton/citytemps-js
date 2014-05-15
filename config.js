@@ -4,6 +4,18 @@ var config = {
 		"cities" :"http://services.arcgis.com/6DIQcwlPy8knb6sg/arcgis/rest/services/HeatIndex_WM_4/FeatureServer/0"
 	},
 	"baselineYear":"2010",
+	"fieldDescriptions": [
+	 	{"field" : "AvgJJA_HI", "descShort": "Avg heat index Jun-Jul-Aug", "descLong" : "Average heat index June-July-August"},
+	 	{"field" : "AvgSummer_HI", "descShort": "Avg summer heat index", "descLong" : "Average summertime heat index"},
+	 	{"field" : "HtIdxCaut", "descShort": "Caution days",  "descLong" : "Number of 'caution' days"},
+	 	{"field" : "HtIdxECaut", "descShort": "Extreme caution days", "descLong" : "Number of 'extreme caution' days"},
+	 	{"field" : "HtIdxDanger", "descShort": "Danger days", "descLong" : "Number of 'danger' days"},
+	 	{"field" : "HtIdxEDanger", "descShort": "Extreme danger days", "descLong" : "Number of 'extreme danger' days"},
+	 	{"field" : "ConsecHtIdxCaut", "descShort": "Caution days in a row", "descLong" : "Max consecutive 'caution' days"},
+	 	{"field" : "ConsecHtIdxECaut", "descShort": "Extreme caution days in a row", "descLong" : "Max consecutive 'extreme caution' days"},
+	 	{"field" : "ConsecHtIdxDanger", "descShort": "Danger days in a row", "descLong" : "Max consecutive 'danger' days"},
+	 	{"field" : "ConsecHtIdxEDanger", "descShort": "Extreme danger days in a row", "descLong" : "Max consecutive 'extreme danger' days"}
+	],
 	"fieldmap": [
 	{"label"	: "2010",
 	 "fields"	: [
