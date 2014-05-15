@@ -18,12 +18,15 @@
   		packages: [{
         	name: 		"customInfoWindow",
         	location: 	location.pathname.replace(/\/[^/]+$/, '') + "/js/customInfoWindow"
+		},{
+			name:		"graphicsAnimation",
+			location:	location.pathname.replace(/\/[^/]+$/, '') + "/js/graphicsAnimation"
 		}]
     };
     </script>
 
     <script src="http://js.arcgis.com/3.9/"></script>
- 	<script src="js/AnimatePolyline.js"></script>
+ 	<!-- <script src="js/AnimatePolyline.js"></script> -->
  	<script src="config.js"></script>
  		
     <script>
@@ -67,6 +70,7 @@
         "esri/Color",
         "esri/graphic",
         "customInfoWindow/CustomInfoWindow",
+        "graphicsAnimation/PolylineAnimation",
         "esri/InfoTemplate",
         "esri/dijit/Legend",
         "esri/dijit/Scalebar",        
@@ -103,6 +107,7 @@
         Color,
         Graphic,
         CustomInfoWindow,
+        PolylineAnimation,
         InfoTemplate,
         Legend,
         Scalebar
@@ -281,7 +286,13 @@
 				pl.spatialReference = map.spatialReference;
 				var gpcConnector = new Graphic(pl);
 				// glCityConnectors.add(gpcConnector);
-				animatePolyline(gpcConnector, glCityConnectors);
+				// animatePolyline(gpcConnector, glCityConnectors);
+				var apl = new PolylineAnimation({
+					graphic:gpcConnector, 
+					graphicsLayer:glCityConnectors,
+					duration:2500
+				});
+				apl.animatePolyline();
 			}
 			
 			// Update the right-pane descriptive text
@@ -291,6 +302,7 @@
 		};
 
 
+/*
         function animatePolyline(myGraphic, myGraphicLayer){
 			// Perform some initial inspection and store some helper attributes about the geometry...
 		  		
@@ -323,7 +335,8 @@
           var geometry = percentOfPolyline(graphic, percent);
           graphic.setGeometry(geometry);
 
-        }
+        }*/
+
         
         function updateDescription(field, value, baselineYear, city, state) {
         	var sDesc1 = "For " + city + ", " + state + " in ";
