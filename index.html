@@ -288,9 +288,9 @@
 				// glCityConnectors.add(gpcConnector);
 				// animatePolyline(gpcConnector, glCityConnectors);
 				var apl = new PolylineAnimation({
-					graphic:gpcConnector, 
-					graphicsLayer:glCityConnectors,
-					duration:2500
+					graphic			: gpcConnector, 
+					graphicsLayer	: glCityConnectors,
+					duration		: 2500
 				});
 				apl.animatePolyline();
 			}
@@ -302,42 +302,6 @@
 		};
 
 
-/*
-        function animatePolyline(myGraphic, myGraphicLayer){
-			// Perform some initial inspection and store some helper attributes about the geometry...
-		  		
-          dojo.animateProperty({
-            node:dojo.create('div'),
-            properties:{
-             along:{
-                start:0,
-                end:100
-              }
-            },
-            duration:2500,
-            beforeBegin:function(){
-  			  		initPolyline(myGraphic, myGraphicLayer);
-            },
-            onAnimate:function(values){
-              // values assumes to be in pixels so we need to remove px from the end...
-              var percent = parseFloat(values.along.replace(/px/,''));
-              updatePolyline(myGraphic, percent);
-              if (!myGraphic.visible) myGraphic.visible = true;
-            },
-            onEnd:function() {
-            	myGraphic.setGeometry(myGraphic.originalGeometry);
-            }
-          }).play();
-
-        }
-
-        function updatePolyline(graphic, percent){
-          var geometry = percentOfPolyline(graphic, percent);
-          graphic.setGeometry(geometry);
-
-        }*/
-
-        
         function updateDescription(field, value, baselineYear, city, state) {
         	var sDesc1 = "For " + city + ", " + state + " in ";
         	var sDesc2 =  ", the " + field + " is " + value + ". "
