@@ -166,21 +166,7 @@
 	        	"http://tiles.arcgis.com/tiles/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Dark_Gray_Reference_Beta/MapServer");
 	        map.addLayer(tlReference);
 	        
-	        // Set up dropdown list of years
-	        // var yearDataStore = new ItemFileReadStore({data: {items: config.fieldmap}});
-			var yearDataStore = new ItemFileReadStore({
-				data:{
-					identifier:"label", label:"label", items: config.fieldmap
-				},				
-				"hierarchical": false
-			});
-	        var ddlYear = new Select({
-                name: "ddlYear",
-                store: yearDataStore
-            }, "ddlYear");
-			ddlYear.on("change", onYearSelected);
-			ddlYear.onChange();
-			ddlYear.startup();
+			createDropdowns();
 			
 			// Create the chart
 			createChart();
@@ -202,6 +188,10 @@
 			showNearestCities();
 		}
 		
+		function onComparisonVariableSelected(changeEvent) {
+			showNearestCities();
+		}
+		
 		function onCitySelected(clickEvent) {
 			gpcSelectedCity = clickEvent.graphic;
 			showNearestCities();
@@ -213,14 +203,17 @@
 			var ddlYear = registry.byId("ddlYear");
 			var selectedYearVal = ddlYear.get("value");
 			
+			var ddlComparisonVariable = registry.byId("ddlComparisonVariable");
+			var selectedVarField = ddlComparisonVariable.get("value");
+			
 			// Two conditions needed: graphic and year must be chosen
-			if (gpcSelectedCity == null || selectedYearVal == null) return;
+			if (gpcSelectedCity == null || selectedYearVal == null || selectedVarField == null) return;
 
 			var sHIFieldNameToday = JSONQuery(
-				"$[?label='" + baselineYear + "'][0].fields[?field='AvgSummer_HI'][0].fieldname",
+				"$[?label='" + baselineYear + "'][0].fields[?field='" + selectedVarField + "'][0].fieldname",
 				config.fieldmap);
 			var sHIFieldNameSelectedYear = JSONQuery(
-				"$[?label='" + selectedYearVal + "'][0].fields[?field='AvgSummer_HI'][0].fieldname", 
+				"$[?label='" + selectedYearVal + "'][0].fields[?field='" + selectedVarField + "'][0].fieldname", 
 				config.fieldmap);
 			
 			// Update the body of the popup with an updated field reference for the chosen year
@@ -265,7 +258,7 @@
 			
 			// Update the chart
 			aryChartData = config.fieldmap.map(function(fieldItem){
-				var sFieldname = JSONQuery("$[?field='AvgSummer_HI'][0].fieldname", fieldItem.fields);
+				var sFieldname = JSONQuery("$[?field='" + selectedVarField + "'][0].fieldname", fieldItem.fields);
 				return gpcSelectedCity.attributes[sFieldname];
 			});
 			cityChart.title = gpcSelectedCity.attributes.NAME
@@ -296,18 +289,50 @@
 			}
 			
 			// Update the right-pane descriptive text
-			updateDescription("average summer heat index", 
+			updateDescription(
 				nTargetCityIdx, baselineYear, 
 				gpcSelectedCity.attributes.NAME, gpcSelectedCity.attributes.ST);
 		};
 
 
-        function updateDescription(field, value, baselineYear, city, state) {
-        	var sDesc1 = "For " + city + ", " + state + " in ";
-        	var sDesc2 =  ", the " + field + " is " + value + ". "
+        function updateDescription(value, baselineYear, city, state) {
+        	var sDesc1 = "For " + city + ", " + state + ", the";
+        	var sDesc2 =  "is " + value + ". "
         		+ "Here are five cities that should feel similar right now:";
         	dojo.byId("lblSelectDescription1").innerHTML = sDesc1;
         	dojo.byId("lblSelectDescription2").innerHTML = sDesc2;
+        }
+        
+        function createDropdowns() {
+	        // Set up dropdown list of years
+	        // var yearDataStore = new ItemFileReadStore({data: {items: config.fieldmap}});
+			var yearDataStore = new ItemFileReadStore({
+				data:{
+					identifier:"label", label:"label", items: config.fieldmap
+				},				
+				"hierarchical": false
+			});
+	        var ddlYear = new Select({
+                name: "ddlYear",
+                store: yearDataStore
+            }, "ddlYear");
+			ddlYear.on("change", onYearSelected);
+			// ddlYear.onChange();
+			ddlYear.startup();
+			
+			// Set up dropdown list of comparison variables
+			var varDataStore = new ItemFileReadStore({
+				data:{
+					identifier:"field", label:"descShort", items: config.fieldDescriptions
+				}
+			});
+			var ddlComparisonVariable = new Select({
+				name: "dllComparisonVariable",
+				store: varDataStore
+			}, "ddlComparisonVariable");
+			// ddlComparisonVariable.attr("value", config.fieldDescriptions[1].field);
+			ddlComparisonVariable.on("change", onComparisonVariableSelected);
+			ddlComparisonVariable.startup();
         }
         
         function createChart() {
@@ -367,7 +392,9 @@
 			<div id="rightPane" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'right'">
 				<!--Refer to field by the position id, since the data doesn't have field
 				names-->
-				<label id="lblSelectDescription1">Click a city to see its average summertime heat index for</label>
+				<label id="lblSelectDescription1">Click a city to see its</label>
+				<div id="ddlComparisonVariable"></div>
+				<label id="lblFor">for</label>
 				<div id="ddlYear"></div>
 				<label id="lblSelectDescription2">. You'll also see the five cities that feel most like it right now.</label>
 				<br/><br/>
@@ -375,8 +402,8 @@
 					<thead>
 						<tr>
 							<th field="NAME" width="50%"> City </th>
-							<th field="ST" width="15%"></th>
-							<th field="Value" width="35%"> Index </th>
+							<th field="ST" width="15%">&nbsp;</th>
+							<th field="Value" width="35%"> Value </th>
 						</tr>
 					</thead>
 				</table>
