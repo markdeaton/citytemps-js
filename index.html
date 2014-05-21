@@ -55,6 +55,7 @@
  		"dojox/charting/themes/Claro",
 	    "dojox/charting/plot2d/Lines",
 	    "dojox/charting/plot2d/Markers",
+	    "dojox/charting/action2d/Tooltip",
 	    "dojox/charting/axis2d/Default",
         "esri/map", 
         "esri/urlUtils",
@@ -92,6 +93,7 @@
         ChartTheme,
         ChartLines,
         ChartMarkers,
+        ChartTooltip,
         ChartDefaultAxes,
         Map,
         urlUtils,
@@ -336,9 +338,8 @@
         }
         
         function createChart() {
-		    // Create the chart within it's "holding" node
-		    cityChart = new Chart("cityChart");
 		 
+			cityChart = new Chart("cityChart");
 		    // Set the theme
 		    cityChart.setTheme(ChartTheme);
 		 
@@ -373,7 +374,11 @@
 		    });
 		 
 		    // Add the series of data
-		    cityChart.addSeries(chartSeries, []);
+		    cityChart.addSeries(chartSeries, [], {marker: ChartTheme.markers.CIRCLE});
+		    
+		    // Add tooltips
+		    var tip = new ChartTooltip(cityChart, "default");
+		    
 		    // cityChart.render();
         }
 	});
