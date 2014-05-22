@@ -5,8 +5,8 @@
     <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no">
     <title>US City Heat Index</title>
 
-    <link rel="stylesheet" href="http://js.arcgis.com/3.9/js/dojo/dijit/themes/claro/claro.css">
-    <link rel="stylesheet" href="http://js.arcgis.com/3.9/js/esri/css/esri.css">
+    <link rel="stylesheet" href="https://js.arcgis.com/3.9/js/dojo/dijit/themes/claro/claro.css">
+    <link rel="stylesheet" href="https://js.arcgis.com/3.9/js/esri/css/esri.css">
  	<link rel="stylesheet" href="js/customInfoWindow/CustomInfoWindow.css"/>
     <link rel="stylesheet" href="css/layout.css">
 	<!-- <link rel="stylesheet" href="dojox/grid/resources/Grid.css">
@@ -25,7 +25,7 @@
     };
     </script>
 
-    <script src="http://js.arcgis.com/3.9/"></script>
+    <script src="https://js.arcgis.com/3.9/"></script>
  	<!-- <script src="js/AnimatePolyline.js"></script> -->
  	<script src="config.js"></script>
  		
@@ -114,6 +114,8 @@
         Legend,
         Scalebar
 		) {
+	    const cityConnectorColor = new Color("#339966");
+
         ready(function(){
 
 	        parser.parse();
@@ -138,7 +140,7 @@
 			glCityConnectors = new GraphicsLayer();
 			var slsConnector = new SimpleLineSymbol(
 				SimpleLineSymbol.STYLE_SOLID,
-				new Color([64, 128, 64]),
+				cityConnectorColor,
 				2);
 			var rendConnectors = new SimpleRenderer(slsConnector);
 			glCityConnectors.setRenderer(rendConnectors);
@@ -165,7 +167,9 @@
 	        map.addLayer(flCities);
 	        
 	        var tlReference = new ArcGISTiledMapServiceLayer(
-	        	"http://tiles.arcgis.com/tiles/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Dark_Gray_Reference_Beta/MapServer");
+	        	// "http://tiles.arcgis.com/tiles/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Dark_Gray_Reference_Beta/MapServer"
+	        	"https://services.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Reference/MapServer"
+	        	);
 	        map.addLayer(tlReference);
 	        
 			createDropdowns();
@@ -388,7 +392,7 @@
 	<body class="claro">
 		<div id="mainWindow" data-dojo-type="dijit.layout.BorderContainer" data-dojo-props="design:'headline'" style="width:100%; height:100%;">
 			<div id="header" class="shadow roundedCorners" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'top'">
-				<div id="title">Summer Heat Index for Selected Cities</div>
+				<div id="title">Heat-Related Indices for Selected Cities</div>
 				<div id="subtitle" style="visibility:gone"></div>
 			</div>
 
