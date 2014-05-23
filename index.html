@@ -177,11 +177,6 @@
 			// Create the chart
 			createChart();
 			
-	        //update the app 
-	        // dom.byId("title").innerHTML = "Heat Index";
-	        // dom.byId("subtitle").innerHTML = "Heat index example";
-
-
 	        //add the scalebar 
 	        var scalebar = new Scalebar({
 				map: map,
@@ -223,7 +218,7 @@
 				config.fieldmap);
 			
 			// Update the body of the popup with an updated field reference for the chosen year
-			var sContent = "Index: <b>" + gpcSelectedCity.attributes[sHIFieldNameSelectedYear] + "</b> (for chosen year)";
+			var sContent = "Value: <b>" + gpcSelectedCity.attributes[sHIFieldNameSelectedYear] + "</b> (for " + selectedYearVal + ")";
 			itPopup.setContent(sContent);
 			map.infoWindow.setContent(sContent);
 			
