@@ -1,7 +1,7 @@
 var config = {
 	"services": {
 		"basemap":"https://services.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer",
-		"cities" :"https://services.arcgis.com/6DIQcwlPy8knb6sg/arcgis/rest/services/HeatIndex_WM_4/FeatureServer/0"
+		"cities" :"https://services.arcgis.com/6DIQcwlPy8knb6sg/arcgis/rest/services/HeatIndex_WM_4_consv/FeatureServer/0"
 	},
 	"baselineYear":"2010",
 	"fieldDescriptions": [
