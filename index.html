@@ -41,10 +41,12 @@
 	require([
         "dojo/parser",
         "dojo/ready",
+        "dojo/on",
         "dijit/registry",
         "dijit/layout/BorderContainer",
         "dijit/layout/ContentPane",
         "dijit/form/Select",
+        "dijit/form/CheckBox",
         "dojo/dom",
         "dojo/dom-construct",
         "dojo/dom-style",
@@ -79,10 +81,12 @@
 	], function(
         parser,
         ready,
+        on,
         registry,
         BorderContainer,
         ContentPane,
         Select,
+        CheckBox,
         dom,
         domConstruct,
         domStyle,
@@ -114,6 +118,7 @@
         Legend,
         Scalebar
 		) {
+		var ddlSecondComparisonVariable, cbShowSecondComparisonVariable;
 	    const cityConnectorColor = new Color("#339966");
 
         ready(function(){
@@ -172,17 +177,20 @@
 	        	);
 	        map.addLayer(tlReference);
 	        
-			createDropdowns();
-			
-			// Create the chart
-			createChart();
-			
 	        //add the scalebar 
 	        var scalebar = new Scalebar({
 				map: map,
 				scalebarUnit: "english"
 	 		});
 
+			createDropdowns();			
+			createChart();
+			
+			cbShowSecondComparisonVariable = new CheckBox({
+				name: "cbShowSecondComparisonVariable",
+				checked: false,
+				onChange: onShowSecondComparisonVariableChanged
+			}, selShowSecondComparisonVariable);
 		});
 
 		function onYearSelected(changeEvent) {
@@ -190,6 +198,29 @@
 		}
 		
 		function onComparisonVariableSelected(changeEvent) {
+			// First disable the corresponding item in the second variable list
+			var secondaryVar = ddlSecondComparisonVariable.get("value");
+			
+			for (var i = 0; i < this.options.length; i++) {
+				delete ddlSecondComparisonVariable.options[i].disabled;
+				if (this.options[i].value == changeEvent) {
+					// Here's the chosen primary var and thus the secondary var to disable. 
+					// If it's the same as the secondary variable,
+					// enable the option and disable the entire widget
+					if (this.options[i].value == secondaryVar) {
+						cbShowSecondComparisonVariable.set("checked", false);
+						// Set 2nd variable selection to something else
+						ddlSecondComparisonVariable.set(
+							"value", 
+							i > 0 ? ddlSecondComparisonVariable.options[0].value : ddlSecondComparisonVariable.options[1].value);
+					}
+					ddlSecondComparisonVariable.options[i].disabled = true;					
+					
+				}
+			}
+			ddlSecondComparisonVariable.startup();
+							
+			// ddlSecondComparisonVariable.options
 			showNearestCities();
 		}
 		
@@ -328,13 +359,30 @@
 				}
 			});
 			var ddlComparisonVariable = new Select({
-				name: "dllComparisonVariable",
+				name: "ddlComparisonVariable",
 				store: varDataStore
 			}, "ddlComparisonVariable");
 			// ddlComparisonVariable.attr("value", config.fieldDescriptions[1].field);
 			ddlComparisonVariable.on("change", onComparisonVariableSelected);
 			ddlComparisonVariable.startup();
-        }
+ 			
+			var secondAttributeStore = new ItemFileReadStore({
+				data:{
+					identifier:"field", label:"descShort", items: config.fieldDescriptions
+				}
+			});
+			ddlSecondComparisonVariable = new Select({
+				name: "ddlSecondComparisonVariable",
+				store:varDataStore,
+			}, "ddlSecondComparisonVariable");
+			domStyle.set(ddlSecondComparisonVariable.domNode, "display", "none");
+			ddlSecondComparisonVariable.options[0].selected = false;
+			ddlSecondComparisonVariable.options[0].disabled = true;
+			ddlSecondComparisonVariable.options[1].selected = true;
+			ddlSecondComparisonVariable.startup();
+			
+			// ddlComparisonVariable.onChange(ddlComparisonVariable.get("value"));
+       }
         
         function createChart() {
 		 
@@ -380,6 +428,10 @@
 		    
 		    // cityChart.render();
         }
+        
+        function onShowSecondComparisonVariableChanged(value) {
+			domStyle.set(ddlSecondComparisonVariable.domNode, "display", value ? "" : "none");
+        }
 	});
     </script>
   </head>
@@ -415,6 +467,13 @@
 						
 						<!-- The Chart -->
 						<div id="cityChart" style="width:100%; height:300px;"></div>
+						
+						<br/><br/>
+						
+						<!-- Second attribute -->
+						<div id="selShowSecondComparisonVariable"></div>
+						<label for="selShowSecondComparisonVariable">Show another attribute</label>
+						<div id="ddlSecondComparisonVariable"></div>
 					</div>
 					<div id="rightBottomContent" class="rightPaneContent" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'bottom'" style="background:transparent; ">
 						<label style="height: 100%; font-size: smaller">
@@ -425,8 +484,16 @@
 							Please see the <a href="http://nomads.gfdl.noaa.gov/" target="_blank">GFDL Data Portal</a> for further information.
 							
 						</label>
-					</div>
-				</div>
+						
+						<!-- Future color-picker -->
+						<!-- <div data-dojo-type="dijit.form.DropDownButton">
+						    <span>
+						        ColorPicker
+						    </span>
+						    <div data-dojo-type="dojox.widget.ColorPicker" id="picker3"></div>
+						</div>
+						
+						<div data-dojo-type="dijit/ColorPalette" data-dojo-props="onChange:function(){alert(this.value);}, palette:'3x4'"></div>					</div> -->				</div>
 			</div>
 
 		</div>
