@@ -30,18 +30,11 @@
  	<script src="config.js"></script>
  		
     <script>
-    var glCityConnectors; 	// Graphics layer for the lines connecting a chosen city to its closest analogs
-    var flCities;			// Graphics layer for the city features
-    var gpcSelectedCity = null;
-    var itPopup;
-    var aryChartData, cityChart;
-    const chartSeries = "DefaultSeries";
-    var map;
-    
 	require([
         "dojo/parser",
         "dojo/ready",
         "dojo/on",
+        "dojo/_base/lang",
         "dijit/registry",
         "dijit/layout/BorderContainer",
         "dijit/layout/ContentPane",
@@ -82,6 +75,7 @@
         parser,
         ready,
         on,
+        lang,
         registry,
         BorderContainer,
         ContentPane,
@@ -118,9 +112,30 @@
         Legend,
         Scalebar
 		) {
+	    var glCityConnectors; 	// Graphics layer for the lines connecting a chosen city to its closest analogs
+	    var flCities;			// Graphics layer for the city features
+	    var gpcSelectedCity = null;
+	    var itPopup;
+	    var aryChartData, cityChart;
+	    const chartSeries1 = "Var1Series";
+	    const chartSeries2= "Var2Series";
+	    var map;
+	    
+		var ddlFirstComparisonVariable;
+		var ddlYear;
 		var ddlSecondComparisonVariable, cbShowSecondComparisonVariable;
-	    const cityConnectorColor = new Color("#339966");
-
+	    const cityConnectorColor1 = new Color("#339966");
+	    const cityConnectorColor2 = new Color("#993366");
+		const slsCityConnector1 = new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, cityConnectorColor1, 2);
+		const slsCityConnector2 = new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, cityConnectorColor2, 2);
+		// Reasons for recalculation; note that these could be used additively, in combination. Right now, they're not.
+		const REASON_CHANGED_PRIMARY_VAR 	= 1;
+		const REASON_CHANGED_SECONDARY_VAR 	= 2;
+		const REASON_CHANGED_YEAR		  	= 4;
+		const REASON_CHANGED_CITY		  	= 8;
+		const REASON_ENABLED_SECONDARY_VAR	= 16;		
+		const REASON_DISABLED_SECONDARY_VAR = 32;
+		
         ready(function(){
 
 	        parser.parse();
@@ -143,12 +158,12 @@
 
 			// Set up and add the connecting-lines graphics layer
 			glCityConnectors = new GraphicsLayer();
-			var slsConnector = new SimpleLineSymbol(
-				SimpleLineSymbol.STYLE_SOLID,
-				cityConnectorColor,
-				2);
-			var rendConnectors = new SimpleRenderer(slsConnector);
-			glCityConnectors.setRenderer(rendConnectors);
+			// var slsConnector = new SimpleLineSymbol(
+				// SimpleLineSymbol.STYLE_SOLID,
+				// cityConnectorColor2,
+				// 2);
+			// var rendConnectors = new SimpleRenderer(slsCityConnector1);
+			// glCityConnectors.setRenderer(rendConnectors);
 			
 			map.addLayer(glCityConnectors);
 			
@@ -193,17 +208,18 @@
 			}, selShowSecondComparisonVariable);
 		});
 
-		function onYearSelected(changeEvent) {
-			showNearestCities();
+		/** EVENTS **/
+		function onYearSelected(yearValue) {
+			showNearestCities(REASON_CHANGED_YEAR);
 		}
 		
-		function onComparisonVariableSelected(changeEvent) {
+		function onFirstComparisonVariableSelected(firstComparisonVarValue) {
 			// First disable the corresponding item in the second variable list
 			var secondaryVar = ddlSecondComparisonVariable.get("value");
 			
 			for (var i = 0; i < this.options.length; i++) {
 				delete ddlSecondComparisonVariable.options[i].disabled;
-				if (this.options[i].value == changeEvent) {
+				if (this.options[i].value == firstComparisonVarValue) {
 					// Here's the chosen primary var and thus the secondary var to disable. 
 					// If it's the same as the secondary variable,
 					// enable the option and disable the entire widget
@@ -221,47 +237,89 @@
 			ddlSecondComparisonVariable.startup();
 							
 			// ddlSecondComparisonVariable.options
-			showNearestCities();
+			showNearestCities(REASON_CHANGED_PRIMARY_VAR);
+		}
+		
+		function onSecondComparisonVarSelected(secondComparisonVarValue) {
+			showNearestCities(REASON_CHANGED_SECONDARY_VAR);
 		}
 		
 		function onCitySelected(clickEvent) {
 			gpcSelectedCity = clickEvent.graphic;
-			showNearestCities();
+			showNearestCities(REASON_CHANGED_CITY);
 		}
 		
-		function showNearestCities() {
+        function onShowSecondComparisonVariableChanged(value) {
+			domStyle.set(ddlSecondComparisonVariable.domNode, "display", value ? "" : "none");
+			showNearestCities(value ? REASON_ENABLED_SECONDARY_VAR : REASON_DISABLED_SECONDARY_VAR);
+        }
+
+		/** END EVENTS **/
+		
+		/** RECALCULATION FUNCTIONS **/
+		
+		function showNearestCities(reason) {
+			
+			switch (reason) {
+				case REASON_CHANGED_PRIMARY_VAR:
+					
+					break;
+			}
 			const baselineYear = 2010;
 			
-			var ddlYear = registry.byId("ddlYear");
 			var selectedYearVal = ddlYear.get("value");
+			var selectedVarField = ddlFirstComparisonVariable.get("value");
 			
-			var ddlComparisonVariable = registry.byId("ddlComparisonVariable");
-			var selectedVarField = ddlComparisonVariable.get("value");
-			
-			// Two conditions needed: graphic and year must be chosen
+			// Three conditions needed: graphic and year and attribute must be chosen
 			if (gpcSelectedCity == null || selectedYearVal == null || selectedVarField == null) return;
+			
 
-			var sHIFieldNameToday = JSONQuery(
+			var sAttrFieldNameToday = JSONQuery(
 				"$[?label='" + baselineYear + "'][0].fields[?field='" + selectedVarField + "'][0].fieldname",
 				config.fieldmap);
-			var sHIFieldNameSelectedYear = JSONQuery(
+			var sAttrFieldNameSelectedYear = JSONQuery(
 				"$[?label='" + selectedYearVal + "'][0].fields[?field='" + selectedVarField + "'][0].fieldname", 
 				config.fieldmap);
+			var nTargetCityComparisonVal = gpcSelectedCity.attributes[sAttrFieldNameSelectedYear];
 			
+			// Update the right-pane descriptive text
+			updateDescription(
+				nTargetCityComparisonVal, baselineYear, 
+				gpcSelectedCity.attributes.NAME, gpcSelectedCity.attributes.ST);
+
 			// Update the body of the popup with an updated field reference for the chosen year
-			var sContent = "Value: <b>" + gpcSelectedCity.attributes[sHIFieldNameSelectedYear] + "</b> (for " + selectedYearVal + ")";
+			var sContent = "Value: <b>" + gpcSelectedCity.attributes[sAttrFieldNameSelectedYear] + "</b> (for " + selectedYearVal + ")";
 			itPopup.setContent(sContent);
 			map.infoWindow.setContent(sContent);
 			
-			
-			// var sHIFieldNameSelectedYear = JSONQuery("$.fields[?field='AvgSummer_HI'][0].fieldname", selectedYearVal);
+			showNearestCitiesForOneVar(
+				selectedVarField, nTargetCityComparisonVal, sAttrFieldNameToday, sAttrFieldNameSelectedYear,
+				slsCityConnector1,
+				registry.byId("dgAttr1"), chartSeries1);
+				
+			// Second attribute chosen?
+			if (cbShowSecondComparisonVariable.checked) {
+				
+			} else {
+				
+			}
+		}
+		
+		function showNearestCitiesForOneVar(
+			selectedVarField, nTargetCityComparisonVal, sAttrFieldNameToday, sAttrFieldNameSelectedYear,
+			slsCityConnector,
+			dataGrid, chartSeries) {
+			/* Prepare two sets of data for three purposes:
+			 * 1. Lines on map for closest cities
+			 * 2. Datagrid entries for closest cities;
+			 * 3. Attribute values for chart
+			 */
 			var aryGraphics = gpcSelectedCity._graphicsLayer.graphics;
 
-			var nTargetCityIdx = gpcSelectedCity.attributes[sHIFieldNameSelectedYear];
-			// Sort graphics in order of closest heat indices to selected city 
+			// Sort graphics in order of closest match to selected city 
 			aryGraphics.sort(function(a, b) {
-				var diffA = Math.abs(nTargetCityIdx - a.attributes[sHIFieldNameToday]);
-				var diffB = Math.abs(nTargetCityIdx - b.attributes[sHIFieldNameToday]);
+				var diffA = Math.abs(nTargetCityComparisonVal - a.attributes[sAttrFieldNameToday]);
+				var diffB = Math.abs(nTargetCityComparisonVal - b.attributes[sAttrFieldNameToday]);
 				return diffA - diffB;
 			});
 			var aryClosestCities = [];
@@ -280,13 +338,12 @@
 					"NAME": 	gpcClosestCity.attributes.NAME,
 					"ST": 		gpcClosestCity.attributes.ST,
 					// name of Value attribute must match that defined in the table attribute below in HTML
-					"Value": gpcClosestCity.attributes[sHIFieldNameToday]
+					"Value": gpcClosestCity.attributes[sAttrFieldNameToday]
 				};
 			});
 			var store = new ItemFileReadStore({data: {items: aryClosestCityTable}});
-			var dgClosestCities = registry.byId("dgClosestCities");
-			dgClosestCities.setStore(store);
-			domStyle.set("dgClosestCities", {"visibility": "visible"});
+			dataGrid.setStore(store);
+			domStyle.set(dataGrid.id, {"visibility": "visible"});
 			
 			// Update the chart
 			aryChartData = config.fieldmap.map(function(fieldItem){
@@ -300,8 +357,11 @@
 			cityChart.updateSeries(chartSeries, aryChartData);
 			cityChart.fullRender();
 			
-			// Now draw connecting lines to the closest cities
-			glCityConnectors.clear();
+			/* Now draw connecting lines to the closest cities */
+			// 1. Remove all graphics for this attribute
+			removeConnectionsForOneAttribute(slsCityConnector);
+			
+			// 2. Add new graphics and animate them
 			for (var i = 0; i < aryClosestCities.length; i++) {
 				var gpcNearbyCity = aryClosestCities[i];
 				var pl = new Polyline([
@@ -309,9 +369,7 @@
 					[gpcNearbyCity.geometry.x, gpcNearbyCity.geometry.y]
 				]);
 				pl.spatialReference = map.spatialReference;
-				var gpcConnector = new Graphic(pl);
-				// glCityConnectors.add(gpcConnector);
-				// animatePolyline(gpcConnector, glCityConnectors);
+				var gpcConnector = new Graphic(pl, slsCityConnector);
 				var apl = new PolylineAnimation({
 					graphic			: gpcConnector, 
 					graphicsLayer	: glCityConnectors,
@@ -319,13 +377,14 @@
 				});
 				apl.animatePolyline();
 			}
-			
-			// Update the right-pane descriptive text
-			updateDescription(
-				nTargetCityIdx, baselineYear, 
-				gpcSelectedCity.attributes.NAME, gpcSelectedCity.attributes.ST);
 		};
 
+		function removeConnectionsForOneAttribute(slsConnectionSymbol) {
+			for (var i = glCityConnectors.graphics.length - 1; i >=0; i--) {
+				var graphic = glCityConnectors.graphics[i];
+				if (graphic.symbol == slsConnectionSymbol) glCityConnectors.remove(graphic);
+			}
+		}
 
         function updateDescription(value, baselineYear, city, state) {
         	var sDesc1 = "For " + city + ", " + state + ", the";
@@ -334,6 +393,10 @@
         	dojo.byId("lblSelectDescription1").innerHTML = sDesc1;
         	dojo.byId("lblSelectDescription2").innerHTML = sDesc2;
         }
+        
+        /** END RECALCULATION FUNCTIONS **/
+       
+       /** INITIALIZATION **/
         
         function createDropdowns() {
 	        // Set up dropdown list of years
@@ -344,7 +407,7 @@
 				},				
 				"hierarchical": false
 			});
-	        var ddlYear = new Select({
+	        ddlYear = new Select({
                 name: "ddlYear",
                 store: yearDataStore
             }, "ddlYear");
@@ -358,13 +421,12 @@
 					identifier:"field", label:"descShort", items: config.fieldDescriptions
 				}
 			});
-			var ddlComparisonVariable = new Select({
+			ddlFirstComparisonVariable = new Select({
 				name: "ddlComparisonVariable",
 				store: varDataStore
 			}, "ddlComparisonVariable");
-			// ddlComparisonVariable.attr("value", config.fieldDescriptions[1].field);
-			ddlComparisonVariable.on("change", onComparisonVariableSelected);
-			ddlComparisonVariable.startup();
+			ddlFirstComparisonVariable.on("change", onFirstComparisonVariableSelected);
+			ddlFirstComparisonVariable.startup();
  			
 			var secondAttributeStore = new ItemFileReadStore({
 				data:{
@@ -375,6 +437,7 @@
 				name: "ddlSecondComparisonVariable",
 				store:varDataStore,
 			}, "ddlSecondComparisonVariable");
+			ddlSecondComparisonVariable.on("change", onSecondComparisonVarSelected);
 			domStyle.set(ddlSecondComparisonVariable.domNode, "display", "none");
 			ddlSecondComparisonVariable.options[0].selected = false;
 			ddlSecondComparisonVariable.options[0].disabled = true;
@@ -421,7 +484,8 @@
 		    });
 		 
 		    // Add the series of data
-		    cityChart.addSeries(chartSeries, [], {marker: ChartTheme.markers.CIRCLE});
+		    cityChart.addSeries(chartSeries1, [], {marker: ChartTheme.markers.CIRCLE});
+		    cityChart.addSeries(chartSeries2, [], {marker: ChartTheme.markers.TRIANGLE});
 		    
 		    // Add tooltips
 		    var tip = new ChartTooltip(cityChart, "default");
@@ -429,9 +493,8 @@
 		    // cityChart.render();
         }
         
-        function onShowSecondComparisonVariableChanged(value) {
-			domStyle.set(ddlSecondComparisonVariable.domNode, "display", value ? "" : "none");
-        }
+        /** END INITIALIZATION **/
+        
 	});
     </script>
   </head>
@@ -455,7 +518,7 @@
 						<label id="lblSelectDescription2">. You'll also see the five cities that feel most like it right now.</label>
 					</div>
 					<div id="rightCenterContent" class="rightPaneContent" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'center'" style="background:transparent">
-						<table data-dojo-type="dojox.grid.DataGrid" jsid="dgClosestCities" id="dgClosestCities" style="visibility:hidden">
+						<table data-dojo-type="dojox.grid.DataGrid" jsid="dgAttr1" id="dgAttr1" style="visibility:hidden">
 							<thead>
 								<tr>
 									<th field="NAME" width="50%"> City </th>
@@ -474,6 +537,15 @@
 						<div id="selShowSecondComparisonVariable"></div>
 						<label for="selShowSecondComparisonVariable">Show another attribute</label>
 						<div id="ddlSecondComparisonVariable"></div>
+						<table data-dojo-type="dojox.grid.DataGrid" jsid="dgAttr2" id="dgAttr2" style="visibility:hidden">
+							<thead>
+								<tr>
+									<th field="NAME" width="50%"> City </th>
+									<th field="ST" width="15%">&nbsp;</th>
+									<th field="Value" width="35%"> Value </th>
+								</tr>
+							</thead>
+						</table>
 					</div>
 					<div id="rightBottomContent" class="rightPaneContent" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'bottom'" style="background:transparent; ">
 						<label style="height: 100%; font-size: smaller">

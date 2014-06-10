@@ -65,7 +65,7 @@
     display:none;
   }
   
-#dgClosestCities{
+#dgAttr1, #dgAttr2{
 	background-color:#1B191E;
 	color:#663399;
 	font-size:small;
