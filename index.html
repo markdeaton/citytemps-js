@@ -29,7 +29,7 @@
  	<!-- <script src="js/AnimatePolyline.js"></script> -->
  	<script src="config.js"></script>
  		
-    <script>
+    <script type="text/javascript">
 	require([
         "dojo/parser",
         "dojo/ready",
@@ -119,15 +119,19 @@
 	    var aryChartData, cityChart;
 	    const chartSeries1 = "Var1Series";
 	    const chartSeries2= "Var2Series";
+		const baselineYear = 2010;
+
 	    var map;
 	    
 		var ddlFirstComparisonVariable;
 		var ddlYear;
-		var ddlSecondComparisonVariable, cbShowSecondComparisonVariable;
-	    const cityConnectorColor1 = new Color("#339966");
-	    const cityConnectorColor2 = new Color("#993366");
-		const slsCityConnector1 = new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, cityConnectorColor1, 2);
-		const slsCityConnector2 = new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, cityConnectorColor2, 2);
+		var ddlSecondComparisonVariable;
+		var cbShowSecondComparisonVariable;
+		var dgPrimary, dgSecondary;
+	    const cityConnectorColor1 = "#339966";
+	    const cityConnectorColor2 = "#993366";
+		const slsCityConnector1 = new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color(cityConnectorColor1), 2);
+		const slsCityConnector2 = new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color(cityConnectorColor2), 2);
 		// Reasons for recalculation; note that these could be used additively, in combination. Right now, they're not.
 		const REASON_CHANGED_PRIMARY_VAR 	= 1;
 		const REASON_CHANGED_SECONDARY_VAR 	= 2;
@@ -140,6 +144,10 @@
 
 	        parser.parse();
 	
+			dgPrimary = registry.byId("dgAttr1"); dgSecondary = registry.byId("dgAttr2");
+			domStyle.set(dgPrimary.id, "color", cityConnectorColor1);
+			domStyle.set(dgSecondary.id, "color", cityConnectorColor2);
+			
 			map = new Map("map", {
 				extent: new Extent({
 					xmin:-13782695.087618, ymin:1811961.3496825, xmax:-7624505.68790585, ymax:7632806.32470579,
@@ -259,50 +267,78 @@
 		/** RECALCULATION FUNCTIONS **/
 		
 		function showNearestCities(reason) {
+			var selectedYearVal = ddlYear.get("value");
+			var selectedVar1Field = ddlFirstComparisonVariable.get("value");
+			var selectedVar2Field = ddlSecondComparisonVariable.get("value");
+			var bVar2Enabled = cbShowSecondComparisonVariable.checked;
 			
 			switch (reason) {
+				case REASON_ENABLED_SECONDARY_VAR:
+				case REASON_CHANGED_SECONDARY_VAR:
+					if (gpcSelectedCity == null || selectedYearVal == null) return;
+					if (bVar2Enabled && selectedVar2Field != null) {
+						calcAndDisplaySecondAttrInfo(selectedVar2Field, selectedYearVal);
+					}
+					break;
+				case REASON_CHANGED_YEAR:
+				case REASON_CHANGED_CITY:
+					if (gpcSelectedCity == null || selectedYearVal == null || selectedVar1Field == null) return;
+					if (bVar2Enabled && selectedVar2Field != null) {
+						calcAndDisplaySecondAttrInfo(selectedVar2Field, selectedYearVal);
+					}
+					// don't break; fall through to also process primary var
 				case REASON_CHANGED_PRIMARY_VAR:
+					if (gpcSelectedCity == null || selectedYearVal == null || selectedVar1Field == null) return;
+					// Calc & display first var info
+					var sAttrFieldNameToday = JSONQuery(
+						"$[?label='" + baselineYear + "'][0].fields[?field='" + selectedVar1Field + "'][0].fieldname",
+						config.fieldmap);
+					var sAttrFieldNameSelectedYear = JSONQuery(
+						"$[?label='" + selectedYearVal + "'][0].fields[?field='" + selectedVar1Field + "'][0].fieldname", 
+						config.fieldmap);
+					var nTargetCityComparisonVal = gpcSelectedCity.attributes[sAttrFieldNameSelectedYear];
 					
+					// Update the right-pane descriptive text
+					updateDescription(
+						nTargetCityComparisonVal, baselineYear, 
+						gpcSelectedCity.attributes.NAME, gpcSelectedCity.attributes.ST);
+		
+					// Update the body of the popup with an updated field reference for the chosen year
+					var sContent = "Value: <b>" + gpcSelectedCity.attributes[sAttrFieldNameSelectedYear] + "</b> (for " + selectedYearVal + ")";
+					itPopup.setContent(sContent);
+					map.infoWindow.setContent(sContent);
+					
+					showNearestCitiesForOneVar(
+						selectedVar1Field, nTargetCityComparisonVal, sAttrFieldNameToday, sAttrFieldNameSelectedYear,
+						slsCityConnector1,
+						dgPrimary, chartSeries1);
+					break;
+				case REASON_DISABLED_SECONDARY_VAR:
+					setDatagridVisibilityById(dgSecondary.id, false);
+					removeConnectionsForOneAttribute(slsCityConnector2);
+					cityChart.updateSeries(chartSeries2, []);
+					cityChart.fullRender();
 					break;
 			}
-			const baselineYear = 2010;
+		}
+		
+		function calcAndDisplaySecondAttrInfo(selectedVar2Field, selectedYearVal) {
+			var sQSFieldNameToday = "$[?label='" + baselineYear + "'][0].fields[?field='" + selectedVar2Field + "'][0].fieldname";
+			var sAttrFieldNameToday = JSONQuery(sQSFieldNameToday, config.fieldmap);
 			
-			var selectedYearVal = ddlYear.get("value");
-			var selectedVarField = ddlFirstComparisonVariable.get("value");
+			var sQSFieldNameSelectedYear=  "$[?label='" + selectedYearVal + "'][0].fields[?field='" + selectedVar2Field + "'][0].fieldname";
+			var sAttrFieldNameSelectedYear = JSONQuery(sQSFieldNameSelectedYear, config.fieldmap);
 			
-			// Three conditions needed: graphic and year and attribute must be chosen
-			if (gpcSelectedCity == null || selectedYearVal == null || selectedVarField == null) return;
-			
-
-			var sAttrFieldNameToday = JSONQuery(
-				"$[?label='" + baselineYear + "'][0].fields[?field='" + selectedVarField + "'][0].fieldname",
-				config.fieldmap);
-			var sAttrFieldNameSelectedYear = JSONQuery(
-				"$[?label='" + selectedYearVal + "'][0].fields[?field='" + selectedVarField + "'][0].fieldname", 
-				config.fieldmap);
 			var nTargetCityComparisonVal = gpcSelectedCity.attributes[sAttrFieldNameSelectedYear];
 			
-			// Update the right-pane descriptive text
-			updateDescription(
-				nTargetCityComparisonVal, baselineYear, 
-				gpcSelectedCity.attributes.NAME, gpcSelectedCity.attributes.ST);
-
-			// Update the body of the popup with an updated field reference for the chosen year
-			var sContent = "Value: <b>" + gpcSelectedCity.attributes[sAttrFieldNameSelectedYear] + "</b> (for " + selectedYearVal + ")";
-			itPopup.setContent(sContent);
-			map.infoWindow.setContent(sContent);
-			
 			showNearestCitiesForOneVar(
-				selectedVarField, nTargetCityComparisonVal, sAttrFieldNameToday, sAttrFieldNameSelectedYear,
-				slsCityConnector1,
-				registry.byId("dgAttr1"), chartSeries1);
-				
-			// Second attribute chosen?
-			if (cbShowSecondComparisonVariable.checked) {
-				
-			} else {
-				
-			}
+				selectedVar2Field, nTargetCityComparisonVal, sAttrFieldNameToday, sAttrFieldNameSelectedYear,
+				slsCityConnector2,
+				dgSecondary, chartSeries2);						
+		}
+		
+		function setDatagridVisibilityById(dgId, visible) {
+			domStyle.set(dgId, {"visibility": visible ? "visible" : "hidden"});
 		}
 		
 		function showNearestCitiesForOneVar(
@@ -343,7 +379,7 @@
 			});
 			var store = new ItemFileReadStore({data: {items: aryClosestCityTable}});
 			dataGrid.setStore(store);
-			domStyle.set(dataGrid.id, {"visibility": "visible"});
+			setDatagridVisibilityById(dataGrid.id, true);
 			
 			// Update the chart
 			aryChartData = config.fieldmap.map(function(fieldItem){
@@ -459,8 +495,7 @@
 		        hAxis: "x",
 		        vAxis: "y",
 		        markers: true,
-		        stroke: {color:"tan"}, 
-		        fill: "lightgreen"
+		        stroke: {color:"tan"}
 		    });
 		 
 		    // Add axes
@@ -484,8 +519,8 @@
 		    });
 		 
 		    // Add the series of data
-		    cityChart.addSeries(chartSeries1, [], {marker: ChartTheme.markers.CIRCLE});
-		    cityChart.addSeries(chartSeries2, [], {marker: ChartTheme.markers.TRIANGLE});
+		    cityChart.addSeries(chartSeries1, [], {stroke:{color:cityConnectorColor1}, fill: cityConnectorColor1, marker: ChartTheme.markers.CIRCLE});
+		    cityChart.addSeries(chartSeries2, [], {stroke:{color:cityConnectorColor2}, fill: cityConnectorColor2, marker: ChartTheme.markers.TRIANGLE});
 		    
 		    // Add tooltips
 		    var tip = new ChartTooltip(cityChart, "default");
@@ -529,7 +564,7 @@
 						</table>
 						
 						<!-- The Chart -->
-						<div id="cityChart" style="width:100%; height:300px;"></div>
+						<div id="cityChart" style="width:100%; height:200px;"></div>
 						
 						<br/><br/>
 						
