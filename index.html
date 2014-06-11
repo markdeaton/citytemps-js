@@ -166,13 +166,6 @@
 
 			// Set up and add the connecting-lines graphics layer
 			glCityConnectors = new GraphicsLayer();
-			// var slsConnector = new SimpleLineSymbol(
-				// SimpleLineSymbol.STYLE_SOLID,
-				// cityConnectorColor2,
-				// 2);
-			// var rendConnectors = new SimpleRenderer(slsCityConnector1);
-			// glCityConnectors.setRenderer(rendConnectors);
-			
 			map.addLayer(glCityConnectors);
 			
 			// Define the popup for the cities; the body of the message changes by chosen year
@@ -195,7 +188,6 @@
 	        map.addLayer(flCities);
 	        
 	        var tlReference = new ArcGISTiledMapServiceLayer(
-	        	// "http://tiles.arcgis.com/tiles/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Dark_Gray_Reference_Beta/MapServer"
 	        	"https://services.arcgisonline.com/arcgis/rest/services/Ocean/World_Ocean_Reference/MapServer"
 	        	);
 	        map.addLayer(tlReference);
